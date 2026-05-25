@@ -35,9 +35,9 @@ This plugin uses pure HTTP REST calls to Cloudflare's API, meaning zero complex 
 ## Installation
 
 ```bash
-hermes plugins install https://github.com/your-username/hermes-d1-memory.git
+hermes plugins install https://github.com/benben17/hermes-d1-memory.git
 ```
-*(Replace the URL with your actual repository URL)*
+
 
 ## Configuration
 

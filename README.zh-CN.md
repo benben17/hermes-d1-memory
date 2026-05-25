@@ -35,7 +35,7 @@
 ## 安装
 
 ```bash
-hermes plugins install https://github.com/你的用户名/hermes-d1-memory.git
+hermes plugins install https://github.com/benben17/hermes-d1-memory.git
 ```
 
 ## 配置环境变量
