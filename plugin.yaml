@@ -1,0 +1,5 @@
+name: d1-mem
+version: 1.0.0
+description: "Cloudflare D1-backed memory provider for Hermes Agent with FTS5 search."
+pip_dependencies:
+  - "requests>=2.28.0"
