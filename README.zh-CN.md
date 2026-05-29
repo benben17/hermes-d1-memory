@@ -8,13 +8,16 @@
 
 ## 核心特性
 
-- **基于 D1 驱动**: 利用 Cloudflare D1 (SQLite) 与 FTS5 虚拟表，实现毫秒级的全文关键词检索与 BM25 相关度打分。
+- **基于 D1 驱动**: 利用 Cloudflare D1 (SQLite) 与 FTS5 虚拟表，实现长期记忆全文检索。
 - **零 SDK 依赖**: 纯粹使用 `requests` 库直连 Cloudflare API，安装无负担，不污染环境。
-- **对话全自动同步**: 对话结束后，在后台异步线程中自动将有价值的对话片段 (`sync_turn`) 存入云端数据库。
-- **上下文未卜先知 (Prefetch)**: 在下一轮对话开始前，AI 会根据你的提问，瞬间从 D1 库中预取相关历史记忆并塞入上下文。
+- **本地持久化队列**: 写入会先进入本地 SQLite queue，再由后台 flusher 刷到 D1，而不是直接线程直写远端。
+- **重试与死信队列**: 写入失败会进行退避重试，并进入 dead-letter 供排障，而不是静默丢失。
+- **结构化 Schema v2**: 新数据写入 `hermes_memories_v2`，包含 kind/source/fingerprint/importance 等治理字段。
+- **上下文未卜先知 (Prefetch)**: 在下一轮对话开始前，AI 会根据你的提问，从 D1 durable memory 中预取相关内容。
 - **主动记忆工具**: 为 AI 赋予了显式的 `d1_remember` (记笔记) 和 `d1_search` (翻找记录) 的能力。
-- **与本地记忆共存**: 本插件不会覆盖 Hermes 原生的 `MEMORY.md` 和 `USER.md`，而是作为一个庞大的“云端历史日记本”与它们完美配合。
+- **与本地记忆共存**: 本插件不会覆盖 Hermes 原生的 `MEMORY.md` 和 `USER.md`，而是作为远程 durable memory 扩展层。
 - **作用域隔离**: 记忆按照用户 (User) 和机器人 (Agent) 严格隔离写入，但在检索时支持同一用户跨机器人打通读取。
+- **默认关闭粗放 turn 镜像**: `sync_turn` 默认不再把整段对话镜像到 D1，除非显式通过环境变量开启。
 
 ## 前置要求
 

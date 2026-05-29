@@ -8,13 +8,16 @@ This plugin uses pure HTTP REST calls to Cloudflare's API, meaning zero complex 
 
 ## Features
 
-- **D1 Backed**: Uses Cloudflare D1 (SQLite) with FTS5 virtual tables for lightning-fast keyword search.
+- **D1 Backed**: Uses Cloudflare D1 (SQLite) with FTS5 virtual tables for keyword search.
 - **Zero Config SDK**: Uses `requests` to call the Cloudflare API directly. No huge cloud SDKs.
-- **Auto Turn Sync**: Asynchronously captures conversation turns to D1 (`sync_turn`).
-- **Context Prefetch**: Automatically retrieves relevant past memories based on the user's latest message before the agent replies.
+- **Durable Local Queue**: Memory writes are first persisted to a local SQLite queue, then flushed to D1 in the background.
+- **Retry + Dead-Letter**: Failed writes are retried with backoff and tracked instead of being silently lost.
+- **Structured Schema v2**: Durable memory now lands in `hermes_memories_v2` with kind/source/fingerprint/importance fields.
+- **Context Prefetch**: Automatically retrieves relevant durable memories before the agent replies.
 - **Explicit Memory Tools**: Provides `d1_remember` and `d1_search` tools to the agent.
-- **Built-in Fallback**: Hermes `MEMORY.md` and `USER.md` remain active. This provider acts as a massive historical diary alongside them.
+- **Built-in Fallback**: Hermes `MEMORY.md` and `USER.md` remain active. This provider extends them with remote durable memory.
 - **Scope Isolation**: Memories are isolated by user and agent but can be retrieved cross-agent for the same user.
+- **Raw Turn Sync Disabled by Default**: `sync_turn` no longer mirrors whole conversations to D1 unless explicitly re-enabled via env.
 
 ## Requirements
 
