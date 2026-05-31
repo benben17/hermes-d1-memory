@@ -10,7 +10,8 @@
 
 - **基于 D1 驱动**: 利用 Cloudflare D1 (SQLite) 与 FTS5 虚拟表，实现长期记忆全文检索。
 - **零 SDK 依赖**: 纯粹使用 `requests` 库直连 Cloudflare API，安装无负担，不污染环境。
-- **本地持久化队列**: 写入会先进入本地 SQLite queue，再由后台 flusher 刷到 D1，而不是直接线程直写远端。
+- **本地持久化队列**: 写入会先进入本地 SQLite 队列 (`~/.hermes/memory/d1_queue.db`)，再由后台 flusher 刷到 D1。**Agent 不会因为网络波动或 API 延迟而阻塞。**
+- **异步预取 (Prefetch)**: 记忆检索在后台线程异步完成，对 Agent 启动和响应速度零影响。
 - **重试与死信队列**: 写入失败会进行退避重试，并进入 dead-letter 供排障，而不是静默丢失。
 - **结构化 Schema v2**: 新数据写入 `hermes_memories_v2`，包含 kind/source/fingerprint/importance 等治理字段。
 - **上下文未卜先知 (Prefetch)**: 在下一轮对话开始前，AI 会根据你的提问，从 D1 durable memory 中预取相关内容。
@@ -51,6 +52,17 @@ CLOUDFLARE_API_TOKEN="填入你的_api_token"
 CLOUDFLARE_D1_DATABASE_ID="填入你的_database_id"
 ```
 
+## 高级配置 (可选)
+
+你可以将以下配置加入 `~/.hermes/.env` 进行性能调优：
+
+| 配置项 | 默认值 | 说明 |
+|-----|---------|-------------|
+| `D1_MEM_ENABLE_RAW_SYNC_TURN` | `false` | 是否将每一轮长对话 (>20 字符) 自动同步到 D1。 |
+| `D1_MEM_BATCH_SIZE` | `25` | 每次 HTTP 调用同步的记录数量。 |
+| `D1_MEM_PREFETCH_LIMIT` | `4` | 注入到 System Prompt 中的相关记忆最大条数。 |
+| `D1_MEM_FLUSH_INTERVAL` | `3` | 后台同步线程的检查间隔（秒）。 |
+
 ## 激活使用
 
 在终端执行：
@@ -58,7 +70,7 @@ CLOUDFLARE_D1_DATABASE_ID="填入你的_database_id"
 hermes config set memory.provider d1-mem
 ```
 
-重启你的 Hermes Agent 会话即可。在首次运行时，插件会自动连接 Cloudflare 并在你的 D1 数据库中初始化所需的 FTS5 全文检索表和触发器（Triggers）。
+重启你的 Hermes Agent 会话即可。你可以通过 `hermes doctor` 随时查看插件健康状态和本地队列积压情况。
 
 ## 开源协议
 MIT

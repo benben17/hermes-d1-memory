@@ -10,7 +10,8 @@ This plugin uses pure HTTP REST calls to Cloudflare's API, meaning zero complex 
 
 - **D1 Backed**: Uses Cloudflare D1 (SQLite) with FTS5 virtual tables for keyword search.
 - **Zero Config SDK**: Uses `requests` to call the Cloudflare API directly. No huge cloud SDKs.
-- **Durable Local Queue**: Memory writes are first persisted to a local SQLite queue, then flushed to D1 in the background.
+- **Durable Local Queue**: Memory writes are first persisted to a local SQLite queue (`~/.hermes/memory/d1_queue.db`), then flushed to D1 in the background. **Your agent never hangs waiting for Cloudflare's API.**
+- **Thread-Safe Prefetch**: Context is fetched asynchronously in a background thread. Zero latency impact on agent startup.
 - **Retry + Dead-Letter**: Failed writes are retried with backoff and tracked instead of being silently lost.
 - **Structured Schema v2**: Durable memory now lands in `hermes_memories_v2` with kind/source/fingerprint/importance fields.
 - **Context Prefetch**: Automatically retrieves relevant durable memories before the agent replies.
@@ -52,13 +53,24 @@ CLOUDFLARE_API_TOKEN="your_api_token"
 CLOUDFLARE_D1_DATABASE_ID="your_database_id"
 ```
 
+## Advanced Configuration (Optional)
+
+Add these to your `~/.hermes/.env` to fine-tune performance:
+
+| Key | Default | Description |
+|-----|---------|-------------|
+| `D1_MEM_ENABLE_RAW_SYNC_TURN` | `false` | Enable to mirror every long (>20 chars) turn to D1. |
+| `D1_MEM_BATCH_SIZE` | `25` | Number of records to sync per HTTP call. |
+| `D1_MEM_PREFETCH_LIMIT` | `4` | Max memories to inject into the system prompt. |
+| `D1_MEM_FLUSH_INTERVAL` | `3` | Seconds between background sync attempts. |
+
 ## Activate
 
 ```bash
 hermes config set memory.provider d1-mem
 ```
 
-Restart your Hermes agent session. The memory provider will automatically initialize the required FTS5 tables and triggers in your D1 database on the first run.
+Restart your Hermes agent session. You can check the health and queue status via `hermes doctor`.
 
 ## License
 MIT
